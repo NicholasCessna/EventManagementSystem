@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Sign Up for Event</title>
+</head>
+<body>
+    <h1>Sign Up for {{ event.name }}</h1>
+    <form action="{{ url_for('signup', event_id=event.id) }}" method="POST">
+        <input type="text" name="name" placeholder="Your Name" required>
+        <input type="email" name="email" placeholder="Your Email" required>
+        <button type="submit">Sign Up</button>
+    </form>
+</body>
+</html>
+
