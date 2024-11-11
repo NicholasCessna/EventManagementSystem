@@ -1,22 +1,19 @@
 <!-- templates/events.html -->
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title>Events</title>
-</head>
-<body>
-    <h1>Events</h1>
+{% extends "base.html" %}
+
+{% block title %}Events{% endblock %}
+{% block header %}Upcoming Events{% endblock %}
+
+{% block content %}
     <a href="{{ url_for('add_event_route') }}">Add New Event</a>
     <ul>
         {% for event in events %}
             <li>
-                <a href="{{ url_for('view_signups', event_id=event.id) }}">{{ event.name }}</a>
-                - {{ event.description }}
-                <!-- Link to sign-up page for this event -->
-                <a href="{{ url_for('add_attendee_route', event_id=event.id) }}">Sign Up</a>
+                <h2>{{ event.name }}</h2>  <!-- Removed link to non-existent 'view_signups' -->
+                <p><strong>Date:</strong> {{ event.date }} | <strong>Time:</strong> {{ event.time }} | <strong>Location:</strong> {{ event.location }}</p>
+                <p>{{ event.description }}</p>
+                <a href="{{ url_for('signup', event_id=event.id) }}">Sign Up</a>
             </li>
         {% endfor %}
     </ul>
-</body>
-</html>
+{% endblock %}

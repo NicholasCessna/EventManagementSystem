@@ -1,16 +1,13 @@
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title>Sign Up for Event</title>
-</head>
-<body>
-    <h1>Sign Up for {{ event.name }}</h1>
-    <form action="{{ url_for('signup', event_id=event.id) }}" method="POST">
-        <input type="text" name="name" placeholder="Your Name" required>
-        <input type="email" name="email" placeholder="Your Email" required>
-        <button type="submit">Sign Up</button>
-    </form>
-</body>
-</html>
+<!-- templates/signup.html -->
+{% extends "base.html" %}
 
+{% block title %}Sign Up for Event{% endblock %}
+{% block header %}Sign Up for {{ event.name }}{% endblock %}
+
+{% block content %}
+    <form method="POST">
+        <p><strong>Date:</strong> {{ event.date }} | <strong>Time:</strong> {{ event.time }} | <strong>Location:</strong> {{ event.location }}</p>
+        <button type="submit">Confirm Sign Up</button>
+    </form>
+    <p><a href="{{ url_for('events') }}">Back to Events</a></p>
+{% endblock %}

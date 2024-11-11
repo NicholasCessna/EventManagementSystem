@@ -2,9 +2,12 @@
 # Install packages "pip install Flask" && "pip install flask-sqlalchemy"
 # Import SQLAlchemy
 from flask_sqlalchemy import SQLAlchemy 
+from flask_bcrypt import Bcrypt
+from flask_login import UserMixin
 
 # Initialize SQLAlchemy
 db = SQLAlchemy()
+bcrypt = Bcrypt()
 
 # Setup configuration for SQLite
 DATABASE_URI = 'sqlite:///event_app.db'  # Connects to our SQLite database
@@ -18,41 +21,46 @@ class Event(db.Model):
     # Defining columns for the Event table
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)  # Allowable string length specified as String(100)
-    description = db.Column(db.String(200), nullable=True)
+    description = db.Column(db.String(200), nullable=False)
+    date = db.Column(db.Date, nullable = False)
+    time = db.Column(db.Time, nullable = False)
+    location = db.Column(db.String(100), nullable = False)
     # One-to-many relationship with SignUp
     signups = db.relationship('SignUp', back_populates='event', cascade="all, delete-orphan")
     
     # This method helps during debugging by returning info about an Event instance
     def __repr__(self):
-        return f"<Event {self.name}>"
-
-# Class for an attendee of an event
-class Attendee(db.Model):
-    __tablename__ = 'attendees'
-    # Columns for the Attendee table
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)  # Nullable=False specifies that this field is required
-    email = db.Column(db.String(100), nullable=False, unique=True)  # Unique=True enforces unique email addresses
-    # One-to-many relationship with SignUp
-    signups = db.relationship('SignUp', back_populates='attendee', cascade="all, delete-orphan")
+        return f"<Event {self.name} on {self.date} at {self.time} in {self.location}>"
     
-    def __repr__(self):
-        return f"<Attendee {self.name}>"
+    
+class User(db.Model,UserMixin):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key = True)
+    username = db.Column(db.String(30), unique = True, nullable = False)
+    password_hash = db.Column(db.String(128), nullable = False)
+    signups = db.relationship('SignUp', back_populates='user', cascade="all, delete-orphan")
+    
+    def set_password(self, password):
+        self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+        
+    def check_password(self, password):
+        return bcrypt.check_password_hash(self.password_hash, password)
 
-# Class to represent the sign-up, linking an attendee to an event
+
+# Class to represent the sign-up, linking an user to an event
 class SignUp(db.Model):
     __tablename__ = 'signups'
     id = db.Column(db.Integer, primary_key=True)
     # Foreign key to link to the Event table
     event_id = db.Column(db.Integer, db.ForeignKey('events.id'), nullable=False)
-    # Foreign key to link to the Attendee table
-    attendee_id = db.Column(db.Integer, db.ForeignKey('attendees.id'), nullable=False)
-    # Relationships to access Event and Attendee objects
+    # Foreign key to link to the user table
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    # Relationships to access Event and user objects
     event = db.relationship('Event', back_populates='signups')
-    attendee = db.relationship('Attendee', back_populates='signups')
+    user = db.relationship('User', back_populates='signups')
     
     def __repr__(self):
-        return f"<SignUp Event ID: {self.event_id}, Attendee ID: {self.attendee_id}>"
+        return f"<SignUp Event ID: {self.event_id}, User ID: {self.user_id}>"
     
     
     
