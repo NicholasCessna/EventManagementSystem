@@ -18,10 +18,16 @@ def register_routes(app):
         if request.method == 'POST':
             username = request.form['username']
             password = request.form['password']
+            name = request.form['name']
+            email = request.form['email']
+            account_type = request.form['account_type']
             if User.query.filter_by(username = username).first():
                 flash('Username Already Exists')
                 return redirect(url_for('register'))
-            register_user(username, password)
+            if User.query.filter_by(email = email).first():
+                flash('Email Already Exists')
+                return redirect(url_for('register'))
+            register_user(username, password, name, email, account_type)
             flash('Registration Successful! Please log in.')
             return redirect(url_for('login'))
         return render_template('register.html')
