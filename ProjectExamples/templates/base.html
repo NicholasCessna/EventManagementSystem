@@ -8,6 +8,15 @@
 </head>
 <body>
     <div class="container">
+        <header>
+            <nav>
+                <ul>
+                    <li><a href="{{ url_for('events') }}">Events</a></li>
+                    <li><a href="{{ url_for('register') }}">Register</a></li>
+                    <li><a href="{{ url_for('login') }}">Login</a></li>
+                </ul>
+            </nav>
+        </header>
         <h1>{% block header %}Event Management System{% endblock %}</h1>
         {% with messages = get_flashed_messages() %}
             {% if messages %}

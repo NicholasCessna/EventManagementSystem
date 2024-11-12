@@ -24,6 +24,9 @@ def logout_user_controller():
     logout_user()
     
 def add_sign_up(event_id, user_id):
+    #add logic to prevent multiple signups
+    #is_signed_up = check_for_signup(event_id, user_id)
+    #if (!is_signed_up):
     sign_up = SignUp(event_id=event_id, user_id=user_id)
     db.session.add(sign_up)
     db.session.commit()
@@ -33,6 +36,9 @@ def get_all_events():
 
 def get_event(event_id):
     return Event.query.get(event_id)
+
+# def check_for_signup(event_id,user_id):
+#     return SignUp.query.filter_by(event_id=event_id, user_id=user_id).first()
 
 def get_signups_for_event(event_id):
     event = Event.query.get(event_id)
