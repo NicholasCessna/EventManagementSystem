@@ -1,3 +1,7 @@
+#!!!! When done coding, run in terminal: git status, git add ., git commit -m "message", git push origin master to commit to the repo
+# Next time start a new codespace to get everyones commited changes. Youre active codespace wont update with the other members changes without starting a new codespace
+# Dont forget to set up a new codespace adding python extension and "pip install"ing missing packages
+
 # Model Logic for creating Database
 # Install packages "pip install Flask" && "pip install flask-sqlalchemy"
 # Import SQLAlchemy
