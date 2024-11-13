@@ -1,22 +1,26 @@
-<!-- templates/register.html -->
 {% extends "base.html" %}
-
 {% block title %}Register{% endblock %}
-{% block header %}Register a New Account{% endblock %}
-
 {% block content %}
-    <form action="{{ url_for('register') }}" method="POST">
-        <div class="form-group">
-            <label>Username</label>
-            <input type="text" name="username" required>
-        </div>
+    <h1>Register</h1>
+    <form method="POST" action="{{ url_for('register') }}">
+        <label for="name">Name:</label>
+        <input type="text" name="name" required>
+        
+        <label for="email">Email:</label>
+        <input type="email" name="email" required>
+        
+        <label for="username">Username:</label>
+        <input type="text" name="username" required>
 
-        <div class="form-group">
-            <label>Password</label>
-            <input type="password" name="password" required>
-        </div>
+        <label for="password">Password:</label>
+        <input type="password" name="password" required>
 
+        <label for="role">Role:</label>
+        <select name="role">
+            <option value="attendee">Attendee</option>
+            <option value="event_creator">Event Creator</option>
+        </select>
+        
         <button type="submit">Register</button>
     </form>
-    <p><a href="{{ url_for('login') }}">Already have an account? Log in</a></p>
 {% endblock %}

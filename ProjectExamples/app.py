@@ -1,39 +1,32 @@
+# app.py
 from flask import Flask
-from models import db, DATABASE_URI, User
-from flask_routes import register_routes
+from flask_sqlalchemy import SQLAlchemy
+from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
+from models import db  # Import the initialized db from models
+from flask_routes import register_routes
 
-# Creates base to run flask app
 app = Flask(__name__)
-app.secret_key = '12345'
-
-
-#Configure the SQLite database URI 
-app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///event_app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = 'yoursecretkey'
 
-# Tie database and app together
+# Initialize plugins
 db.init_app(app)
+bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
-login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def load_user(user_id):
+    from models import User
     return User.query.get(int(user_id))
 
-# Create db tables before first db instance is made
+# Register routes
+register_routes(app)
+
+# Initialize the database with the app context
 with app.app_context():
     db.create_all()
 
-    
-# register routes from flask routes  
-register_routes(app)
-
-
-if __name__ == '__main__':
-    app.run(debug = True)
-    
-    
-    
-
-
+if __name__ == "__main__":
+    app.run(debug=True)

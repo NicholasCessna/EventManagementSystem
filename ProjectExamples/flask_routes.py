@@ -1,84 +1,92 @@
 # flask_routes.py
 from flask import render_template, request, redirect, url_for, flash
-from flask_login import login_required, login_user, logout_user, current_user
-from controllers import get_all_events, get_event, add_sign_up, add_event, register_user, login_user_controller, logout_user_controller 
-from models import User
+from flask_login import login_required, current_user
+from controllers import UserController, EventController, SignUpController
 from datetime import datetime
 
 def register_routes(app):
-    # Route to display all events public (Landing Page)
+    
     @app.route('/')
     def events():
-        events = get_all_events()
-        return render_template('events.html', events=events)
-    
-    
-    @app.route('/register', methods = ['GET', 'POST'])
+        events = EventController.get_all_events()
+        event_signup_status = {}
+        if current_user.is_authenticated:
+            for event in events:
+                event_signup_status[event.id] = SignUpController.check_for_signup(event.id, current_user.id)
+        return render_template('events.html', events=events, event_signup_status=event_signup_status)
+
+    @app.route('/event/<int:event_id>')
+    def event_detail(event_id):
+        event = EventController.get_event(event_id)
+        signup_status = False
+        if current_user.is_authenticated:
+            signup_status = SignUpController.check_for_signup(event_id, current_user.id)
+        return render_template('event_detail.html', event=event, signup_status=signup_status)
+
+    @app.route('/register', methods=['GET', 'POST'])
     def register():
         if request.method == 'POST':
             username = request.form['username']
             password = request.form['password']
-            name = request.form['name']
             email = request.form['email']
-            account_type = request.form['account_type']
-            if User.query.filter_by(username = username).first():
-                flash('Username Already Exists')
+            name = request.form['name']
+            role = request.form['role']
+            if UserController.get_user_info(username):
+                flash('Username already exists')
                 return redirect(url_for('register'))
-            if User.query.filter_by(email = email).first():
-                flash('Email Already Exists')
-                return redirect(url_for('register'))
-            register_user(username, password, name, email, account_type)
-            flash('Registration Successful! Please log in.')
+            UserController.register_user(username, password, email, name, role)
+            flash('Registration successful! Please log in.')
             return redirect(url_for('login'))
         return render_template('register.html')
-    
-    @app.route('/login', methods = ['GET', 'POST'])
+
+    @app.route('/login', methods=['GET', 'POST'])
     def login():
         if request.method == 'POST':
             username = request.form['username']
             password = request.form['password']
-            if login_user_controller(username, password):
+            if UserController.login_user_controller(username, password):
                 flash('Logged in successfully!')
                 return redirect(url_for('events'))
-            flash('Invalid Username or Password')
+            flash('Invalid username or password')
         return render_template('login.html')
-    
+
     @app.route('/logout')
+    @login_required
     def logout():
-        logout_user_controller()
+        UserController.logout_user_controller()
         flash('Logged out successfully')
         return redirect(url_for('events'))
-    
 
     @app.route('/add_event', methods=['GET', 'POST'])
+    @login_required
     def add_event_route():
+        if current_user.role != 'event_creator':  # Ensure only event creators can access
+            flash("You don't have permission to add events.")
+            return redirect(url_for('events'))
+
         if request.method == 'POST':
             name = request.form['name']
             description = request.form['description']
-            # Convert date and time strings to Python date and time objects
             date_str = request.form['date']
             time_str = request.form['time']
-            date = datetime.strptime(date_str, '%Y-%m-%d').date()  # Convert to date object
-            time = datetime.strptime(time_str, '%H:%M').time()      # Convert to time object
             location = request.form['location']
-            # Add the event to the database
-            add_event(name, description, date, time, location)
+            
+            # Parse date and time inputs
+            date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            time = datetime.strptime(time_str, '%H:%M').time()
+            
+            # Call EventController to add event with the organizer ID
+            EventController.add_event(name, description, date, time, location, current_user.id)
+            flash('Event added successfully!')
             return redirect(url_for('events'))
         return render_template('add_event.html')
 
-    # Route to display a sign-up page for a specific event
-    @app.route('/event/<int:event_id>/signup', methods = ['GET', 'POST'])
+    @app.route('/event/<int:event_id>/signup', methods=['GET', 'POST'])
     @login_required
     def signup(event_id):
-        event = get_event(event_id)
         if request.method == 'POST':
-            add_sign_up(event_id, current_user.id)
-            flash('You successfully Signed Up for the event')
-            return redirect(url_for('events'))
-        return render_template('signup.html',event=event)
-            
-
-
-
-    
-    
+            message = SignUpController.add_sign_up(event_id, current_user.id)
+            flash(message)
+            return redirect(url_for('event_detail', event_id=event_id))
+        event = EventController.get_event(event_id)
+        return render_template('signup.html', event=event)

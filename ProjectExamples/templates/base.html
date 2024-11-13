@@ -1,33 +1,29 @@
 <!-- templates/base.html -->
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>{% block title %}Event Management System{% endblock %}</title>
+    <meta charset="UTF-8">
+    <title>{% block title %}Event Management{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <nav>
-                <ul>
-                    <li><a href="{{ url_for('events') }}">Events</a></li>
-                    <li><a href="{{ url_for('register') }}">Register</a></li>
-                    <li><a href="{{ url_for('login') }}">Login</a></li>
-                </ul>
-            </nav>
-        </header>
-        <h1>{% block header %}Event Management System{% endblock %}</h1>
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <div class="message">
-                    {% for message in messages %}
-                        <p>{{ message }}</p>
-                    {% endfor %}
-                </div>
+    <nav>
+        <a href="{{ url_for('events') }}">Home</a>
+        {% if current_user.is_authenticated %}
+            <a href="{{ url_for('logout') }}">Logout</a>
+            {% if current_user.role == 'event_creator' %}
+                <a href="{{ url_for('add_event_route') }}">Add Event</a>
             {% endif %}
-        {% endwith %}
+        {% else %}
+            <a href="{{ url_for('login') }}">Login</a>
+            <a href="{{ url_for('register') }}">Register</a>
+        {% endif %}
+    </nav>
+    <div class="container">
         {% block content %}{% endblock %}
     </div>
+    <footer>
+        &copy; 2024 Event Management App
+    </footer>
 </body>
 </html>

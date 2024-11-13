@@ -1,64 +1,59 @@
+# controllers.py
 from flask_login import login_user, logout_user
 from models import db, Event, User, SignUp
 
-
-
 class UserController:
-    
+    @staticmethod
     def login_user_controller(username, password):
-        user=User.query.filter_by(username=username).first()
+        user = User.find_by_username(username)
         if user and user.check_password(password):
             login_user(user)
             return True
-        return False    
+        return False
     
+    @staticmethod
     def logout_user_controller():
         logout_user()
     
-    def register_user(username,password,email,name,account_type):
-        user = User(username=username, email=email, name=name, account_type=account_type)
+    @staticmethod
+    def register_user(username, password, email, name, role):
+        user = User(username=username, email=email, name=name, role=role)
         user.set_password(password)
-        db.session.add(user)
-        db.session.commit()
+        user.save()
         return user
     
+    @staticmethod
     def get_user_info(user_id):
-        user = User.query.get(user_id)
-        return user
-
+        return User.query.get(user_id)
 
 class EventController:
-
-    def add_event(name, description, date, time, location):
-        new_event = Event(name=name, description = description, date=date, time=time, location=location)
-        db.session.add(new_event)
-        db.session.commit()
+    @staticmethod
+    def add_event(name, description, date, time, location, organizer_id):
+        new_event = Event(name=name, description=description, date=date, time=time, location=location, organizer_id=organizer_id)
+        new_event.save()
     
+    @staticmethod
     def get_all_events():
-        return Event.query.all()
+        return Event.get_all_upcoming()
 
+    @staticmethod
     def get_event(event_id):
         return Event.query.get(event_id)
 
-
-
 class SignUpController:
-    
+    @staticmethod
     def add_sign_up(event_id, user_id):
-        check = SignUp.query.filter_by(event_id=event_id, user_id=user_id).first() is not None
-        if  not check:
+        if not SignUp.is_signed_up(event_id, user_id):
             sign_up = SignUp(event_id=event_id, user_id=user_id)
-            db.session.add(sign_up)
-            db.session.commit()
-        else:    
-            return "You are already signed up for this event"
-        
+            sign_up.save()
+            return "Signed up successfully"
+        return "Already signed up"
 
-    def check_for_signup(event_id,user_id) -> bool:
-        return SignUp.query.filter_by(event_id=event_id, user_id=user_id).first() is not None
+    @staticmethod
+    def check_for_signup(event_id, user_id):
+        return SignUp.is_signed_up(event_id, user_id)
 
+    @staticmethod
     def get_signups_for_event(event_id):
         event = Event.query.get(event_id)
         return event.signups if event else None
-    
-
