@@ -2,6 +2,7 @@
 from flask import render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from controllers import UserController, EventController, SignUpController
+from utils.email_verifier import EmailVerifier
 from datetime import datetime
 
 def register_routes(app):
@@ -14,7 +15,6 @@ def register_routes(app):
         search_query = request.form.get('search') if request.method == 'POST' else None
         events_query = EventController.search_events(search_query) if search_query else EventController.get_all_events()
 
-        # Paginate the events query
         pagination = events_query.paginate(page=page, per_page=per_page)
 
         event_signup_status = {}
@@ -37,36 +37,44 @@ def register_routes(app):
     def profile():
         if request.method == 'POST':
             if 'update_profile' in request.form:
-                name = request.form.get('name')
+                first_name = request.form.get('first_name')
+                last_name = request.form.get('last_name')
                 email = request.form.get('email')
-                UserController.update_user_profile(current_user.id, name, email)
-                flash('Your profile has been updated')
+
+                UserController.update_user_profile(current_user.id, first_name, last_name, email)
+                flash('Your profile has been updated.', 'success')
             elif 'change_password' in request.form:
                 old_password = request.form.get('old_password')
                 new_password = request.form.get('new_password')
                 confirm_password = request.form.get('confirm_password')
+
                 if not UserController.check_password(current_user.id, old_password):
-                    flash('Incorrect password')
+                    flash('Incorrect password.', 'error')
                 elif new_password != confirm_password:
-                    flash('Passwords do not match')
+                    flash('Passwords do not match.', 'error')
                 else:
                     UserController.change_password(current_user.id, new_password)
-                    flash('Password changed successfully')
+                    flash('Password changed successfully.', 'success')
             elif 'delete_account' in request.form:
                 UserController.delete_user(current_user.id)
                 logout()
-                flash('Your account has been deleted')
+                flash('Your account has been deleted.', 'success')
                 return redirect(url_for('events'))
-            return redirect(url_for('profile')) 
-           
-        if UserController.get_user_type(current_user.id) == 'attendee':
-            events_for_user = SignUpController.get_events_for_user(current_user.id)
-            return render_template('profile.html', user=current_user, events_for_user=events_for_user)
-        
-        elif UserController.get_user_type(current_user.id) == 'event_creator':
-            events_for_user = SignUpController.get_events_for_user(current_user.id)
+            return redirect(url_for('profile'))
+
+        events_for_user = SignUpController.get_events_for_user(current_user.id)
+        created_events = []
+        if UserController.get_user_type(current_user.id) == 'event_creator':
             created_events = EventController.get_user_events(current_user.id)
-            return render_template('profile.html', user=current_user, events_for_user=events_for_user, created_events=created_events)
+
+        return render_template(
+            'profile.html',
+            user=current_user,
+            events_for_user=events_for_user,
+            created_events=created_events,
+        )
+
+                        
                         
                         
     @app.route('/event/<int:event_id>')
@@ -76,22 +84,50 @@ def register_routes(app):
         if current_user.is_authenticated:
             signup_status = SignUpController.check_for_signup(event_id, current_user.id)
         return render_template('event_detail.html', event=event, signup_status=signup_status)
+    
+    
+    
 
     @app.route('/register', methods=['GET', 'POST'])
     def register():
         if request.method == 'POST':
-            username = request.form['username']
-            password = request.form['password']
-            email = request.form['email']
-            name = request.form['name']
-            role = request.form['role']
-            if UserController.get_user_info(username):
-                flash('Username already exists')
+            try:
+                first_name = request.form['first_name']
+                last_name = request.form['last_name']
+                username = request.form['username']
+                password = request.form['password']
+                confirm_password = request.form['confirm_password']
+                email = request.form['email']
+                role = request.form['role']
+                registration_code = request.form.get('registration_code')
+
+                if password != confirm_password:
+                    flash('Passwords do not match', 'error')
+                    return redirect(url_for('register'))
+
+                if UserController.get_user_info(username):
+                    flash('Username already exists', 'error')
+                    return redirect(url_for('register'))
+
+                if UserController.get_user_by_email(email):
+                    flash('Email is already registered', 'error')
+                    return redirect(url_for('register'))
+
+                if not EmailVerifier.verify(email):
+                    flash('Email verification failed.', 'error')
+                    return redirect(url_for('register'))
+
+                UserController.register_user(username, password, email, first_name, last_name, role, registration_code)
+                flash('Registration successful! Please log in.')
+                return redirect(url_for('login'))
+            except Exception as e:
+                flash('An error occurred during registration.', 'error')
+                print(f"Error: {e}")
                 return redirect(url_for('register'))
-            UserController.register_user(username, password, email, name, role)
-            flash('Registration successful! Please log in.')
-            return redirect(url_for('login'))
         return render_template('register.html')
+
+
+
 
     @app.route('/login', methods=['GET', 'POST'])
     def login():
@@ -104,6 +140,9 @@ def register_routes(app):
             flash('Invalid username or password')
         return render_template('login.html')
 
+
+
+
     @app.route('/logout')
     @login_required
     def logout():
@@ -111,10 +150,13 @@ def register_routes(app):
         flash('Logged out successfully')
         return redirect(url_for('events'))
 
+
+
+
     @app.route('/add_event', methods=['GET', 'POST'])
     @login_required
     def add_event_route():
-        if current_user.role != 'event_creator':  # Ensure only event creators can access
+        if current_user.role != 'event_creator':
             flash("You don't have permission to add events.")
             return redirect(url_for('events'))
 
@@ -124,16 +166,21 @@ def register_routes(app):
             date_str = request.form['date']
             time_str = request.form['time']
             location = request.form['location']
-            
-            # Parse date and time inputs
+
             date = datetime.strptime(date_str, '%Y-%m-%d').date()
             time = datetime.strptime(time_str, '%H:%M').time()
-            
-            # Call EventController to add event with the organizer ID
-            EventController.add_event(name, description, date, time, location, current_user.id)
+
+            image = request.files.get('image')
+
+            EventController.add_event(name, description, date, time, location, current_user.id, image)
+
             flash('Event added successfully!')
             return redirect(url_for('events'))
+
         return render_template('add_event.html')
+
+
+
 
     @app.route('/event/<int:event_id>/signup', methods=['GET', 'POST'])
     @login_required
@@ -145,6 +192,9 @@ def register_routes(app):
         event = EventController.get_event(event_id)
         return render_template('signup.html', event=event)
 
+
+
+
     @app.route('/event/<int:event_id>/delete', methods=['POST'])
     @login_required
     def delete_event(event_id):
@@ -152,16 +202,29 @@ def register_routes(app):
         flash('Event deleted successfully')
         return redirect(url_for('profile'))
     
+    
+    
+    
     @app.route('/event/<int:event_id>/edit', methods=['GET', 'POST'])
     @login_required
     def edit_event(event_id):
+        event = EventController.get_event(event_id)
+
         if request.method == 'POST':
-            EventController.edit_event(event_id, request.form['name'], request.form['description'], request.form['date'], request.form['time'], request.form['location'])
-            flash('Event edited successfully')
+            # Collect form data
+            name = request.form['name']
+            description = request.form['description']
+            date = request.form['date']
+            time = request.form['time']
+            location = request.form['location']
+            remove_image = request.form.get('remove_image', None) == "yes"
+            image = request.files.get('image')
+
+            EventController.edit_event(event_id, name, description, date, time, location, image, remove_image)
+            flash('Event updated successfully!')
             return redirect(url_for('profile'))
-        else:
-            event = EventController.get_event(event_id)
-            return render_template('edit_event.html', event=event)
+
+        return render_template('edit_event.html', event=event)
     
     
 

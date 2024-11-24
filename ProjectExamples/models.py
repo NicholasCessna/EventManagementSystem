@@ -9,6 +9,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import UserMixin
 from datetime import datetime
+import os
+from werkzeug.utils import secure_filename
 import pytz
 
 db = SQLAlchemy()
@@ -23,9 +25,12 @@ class Event(db.Model):
     time = db.Column(db.Time, nullable=False)
     location = db.Column(db.String(100), nullable=False)
     organizer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    image_filename = db.Column(db.String(100), nullable=True)
 
     signups = db.relationship('SignUp', back_populates='event', cascade="all, delete-orphan")
     organizer = db.relationship('User', back_populates='organized_events')
+    
+    UPLOAD_FOLDER = 'static/uploads'
 
     @staticmethod
     def get_all_upcoming():
@@ -50,14 +55,48 @@ class Event(db.Model):
         self.time = time
         self.location = location
         db.session.commit()
+        
+    @staticmethod
+    def save_image(image):
+        """
+        Save the uploaded image to the designated directory and return the filename.
+        """
+        if image:
+            filename = secure_filename(image.filename)
+            upload_path = os.path.join(Event.UPLOAD_FOLDER, filename)
+            os.makedirs(os.path.dirname(upload_path), exist_ok=True)  # Ensure directory exists
+            image.save(upload_path)
+            return filename
+        return None
+
+    def update_image(self, image):
+        """
+        Save a new image and remove the old one if it exists.
+        """
+        if image and image.filename:
+            self.remove_image()  # Remove the old image
+            saved_filename = Event.save_image(image)
+            if saved_filename:  # Ensure the filename is valid
+                self.image_filename = saved_filename
+
+    def remove_image(self):
+        """Remove the current image from storage."""
+        if self.image_filename:
+            image_path = os.path.join(Event.UPLOAD_FOLDER, self.image_filename)
+            if os.path.exists(image_path):
+                os.remove(image_path)
+            self.image_filename = None  # Clear the image_filename field
 
     def __repr__(self):
         return f"<Event {self.name} on {self.date} at {self.time} in {self.location}>"
 
+
+
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
+    first_name = db.Column(db.String(50), nullable=False)  
+    last_name = db.Column(db.String(50), nullable=False) 
     email = db.Column(db.String(100), unique=True, nullable=False)
     username = db.Column(db.String(30), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
@@ -76,6 +115,17 @@ class User(db.Model, UserMixin):
     def find_by_username(cls, username):
         return cls.query.filter_by(username=username).first()
     
+    @classmethod
+    def find_by_email(cls, email):
+        return cls.query.filter_by(email=email).first()
+    
+    @staticmethod
+    def validate_registration_code(input_code, role):
+        """Validate the registration code based on the role."""
+        if role == 'event_creator' and input_code == '1234':
+            return True
+        return False
+    
     def delete(self):
         db.session.delete(self)
         db.session.commit()
@@ -86,6 +136,8 @@ class User(db.Model, UserMixin):
 
     def __repr__(self):
         return f"<User {self.username}>"
+
+
 
 class SignUp(db.Model):
     __tablename__ = 'signups'
