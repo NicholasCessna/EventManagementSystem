@@ -5,12 +5,11 @@
 # Model Logic for creating Database
 # Install packages "pip install Flask" && "pip install flask-sqlalchemy"
 # models.py
-# models.py
-# models.py
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import UserMixin
 from datetime import datetime
+import pytz
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()
@@ -28,10 +27,13 @@ class Event(db.Model):
     signups = db.relationship('SignUp', back_populates='event', cascade="all, delete-orphan")
     organizer = db.relationship('User', back_populates='organized_events')
 
-    @classmethod
-    def get_all_upcoming(cls):
-        today = datetime.today().date()
-        return cls.query.filter(cls.date >= today).all()
+    @staticmethod
+    def get_all_upcoming():
+        now = datetime.now(pytz.timezone('US/Eastern'))
+        return Event.query.filter(
+            (Event.date > now.date()) | 
+            ((Event.date == now.date()) & (Event.time >= now.time()))
+        ).order_by(Event.date, Event.time)
 
     def save(self):
         db.session.add(self)
@@ -39,6 +41,14 @@ class Event(db.Model):
 
     def delete(self):
         db.session.delete(self)
+        db.session.commit()
+        
+    def edit(self, name, description, date, time, location):
+        self.name = name
+        self.description = description
+        self.date = date
+        self.time = time
+        self.location = location
         db.session.commit()
 
     def __repr__(self):
@@ -65,6 +75,10 @@ class User(db.Model, UserMixin):
     @classmethod
     def find_by_username(cls, username):
         return cls.query.filter_by(username=username).first()
+    
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
 
     def save(self):
         db.session.add(self)
@@ -88,6 +102,10 @@ class SignUp(db.Model):
 
     def save(self):
         db.session.add(self)
+        db.session.commit()
+        
+    def delete(self):
+        db.session.delete(self)
         db.session.commit()
 
     def __repr__(self):

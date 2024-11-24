@@ -11,7 +11,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///event_app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'yoursecretkey'
 
-# Initialize plugins
 db.init_app(app)
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
@@ -21,10 +20,8 @@ def load_user(user_id):
     from models import User
     return User.query.get(int(user_id))
 
-# Register routes
 register_routes(app)
 
-# Initialize the database with the app context
 with app.app_context():
     db.create_all()
 

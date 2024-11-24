@@ -1,29 +1,50 @@
-<!-- templates/base.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Event Management{% endblock %}</title>
+
+    <!-- Stylesheets -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <!-- Favicon Links -->
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicons/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicons/favicon-16x16.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='favicons/site.webmanifest') }}">
 </head>
 <body>
-    <nav>
-        <a href="{{ url_for('events') }}">Home</a>
-        {% if current_user.is_authenticated %}
-            <a href="{{ url_for('logout') }}">Logout</a>
-            {% if current_user.role == 'event_creator' %}
-                <a href="{{ url_for('add_event_route') }}">Add Event</a>
+    <div class="wrapper" style="display: flex; flex-direction: column; min-height: 100vh;">
+        <!-- Navigation Bar -->
+        <nav>
+            <a href="{{ url_for('events') }}">
+                <img src="{{ url_for('static', filename='img/Shield_UnivPittsburgh_WhiteGold.png') }}" 
+                     alt="University of Pittsburgh Logo" 
+                     style="height: 50px; vertical-align: middle;">
+            </a>
+            <a href="{{ url_for('events') }}">Home</a>
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('profile') }}">Profile</a>
+                <a href="{{ url_for('logout') }}">Logout</a>
+                {% if current_user.role == 'event_creator' %}
+                    <a href="{{ url_for('add_event_route') }}">Add Event</a>
+                {% endif %}
+            {% else %}
+                <a href="{{ url_for('login') }}">Login</a>
+                <a href="{{ url_for('register') }}">Register</a>
             {% endif %}
-        {% else %}
-            <a href="{{ url_for('login') }}">Login</a>
-            <a href="{{ url_for('register') }}">Register</a>
-        {% endif %}
-    </nav>
-    <div class="container">
-        {% block content %}{% endblock %}
+        </nav>
+
+        <!-- Main Content -->
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            &copy; 2024 Event Management App - University of Pittsburgh
+        </footer>
     </div>
-    <footer>
-        &copy; 2024 Event Management App
-    </footer>
 </body>
 </html>
+

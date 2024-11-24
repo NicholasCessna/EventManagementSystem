@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Event{% endblock %}
+
+{% block content %}
+<script>
+    function confirmAction(message) {
+        return confirm(message);
+    }
+</script>
+
+<h1>Edit Event</h1>
+<form method="POST" action="{{ url_for('edit_event', event_id=event.id) }}" onsubmit="return confirmAction('Are you sure you want to edit this event?')">
+    <label for="name">Name:</label>
+    <input type="text" id="name" name="name" value="{{ event.name }}">
+    
+    <label for="description">Description:</label>
+    <input type="text" id="description" name="description" value="{{ event.description }}">
+    
+    <label for="date">Date:</label>
+    <input type="date" id="date" name="date" value="{{ event.date }}">
+    
+    <label for="time">Time:</label>
+    <input type="time" id="time" name="time" value="{{ event.time }}">
+    
+    <label for="location">Location:</label>
+    <input type="text" id="location" name="location" value="{{ event.location }}">
+    
+    <button type="submit">Save Changes</button>
+</form>
+{% endblock %}

@@ -1,21 +1,45 @@
 {% extends "base.html" %}
+
 {% block title %}Events{% endblock %}
+
 {% block content %}
-    <h1>Upcoming Events</h1>
+<h1 style="text-align: center; color: #003594;">Upcoming Events</h1>
+
+<form method="POST" action="{{ url_for('events') }}" style="text-align: center; margin-bottom: 20px;">
+    <input type="text" name="search" placeholder="Search events..." style="padding: 10px; width: 300px;">
+    <button type="submit" style="padding: 10px 20px; background: #003594; color: #fff; border: none; border-radius: 5px;">
+        Search
+    </button>
+</form>
+
+{% if events %}
     <ul class="event-list">
         {% for event in events %}
             <li class="event-item">
-                <h3><a href="{{ url_for('event_detail', event_id=event.id) }}">{{ event.name }}</a></h3>
-                <p><strong>Date:</strong> {{ event.date }} | <strong>Time:</strong> {{ event.time }}</p>
+                <h3>{{ event.name }}</h3>
+                <p><strong>Date:</strong> {{ event.date }}</p>
+                <p><strong>Time:</strong> {{ event.time }}</p>
                 <p>{{ event.description }}</p>
                 {% if current_user.is_authenticated %}
-                    {% if not event_signup_status[event.id] %}
-                        <a class="btn" href="{{ url_for('signup', event_id=event.id) }}">Sign Up</a>
+                    {% if event_signup_status[event.id] %}
+                        <p>You are signed up for this event.</p>
                     {% else %}
-                        <p>Signed Up</p>
+                        <a href="{{ url_for('signup', event_id=event.id) }}" class="btn">Sign Up</a>
                     {% endif %}
                 {% endif %}
             </li>
         {% endfor %}
     </ul>
+{% else %}
+    <p>No events found.</p>
+{% endif %}
+
+<div class="pagination">
+    {% if prev_page %}
+        <a href="{{ url_for('events', page=prev_page) }}">Previous</a>
+    {% endif %}
+    {% if next_page %}
+        <a href="{{ url_for('events', page=next_page) }}">Next</a>
+    {% endif %}
+</div>
 {% endblock %}
