@@ -1,7 +1,7 @@
 # Controller of solely event related actions between view and model
 # controllers.py
 from flask_login import login_user, logout_user
-from models import db, Event, User, SignUp
+from models.models import db, Event, User, SignUp
 from datetime import datetime
 
 class UserController:
@@ -86,6 +86,9 @@ class UserController:
         return User.query.filter_by(email=email).first()
     
 
+    
+
+
 class EventController:
     @staticmethod
     def add_event(name, description, date, time, location, organizer_id, image=None):
@@ -101,56 +104,6 @@ class EventController:
             image_filename=image_filename
         )
         new_event.save()
-    
-    
-    @staticmethod
-    def get_all_events():
-        return Event.get_all_upcoming()
-
-
-    @staticmethod
-    def get_event(event_id):
-        return Event.query.get(event_id)
-
-    
-    @staticmethod
-    def search_events(query):
-        return Event.query.filter(
-            Event.name.contains(query) | Event.description.contains(query)
-        ).order_by(Event.date, Event.time)
-
-    
-    @staticmethod
-    def get_user_events(user_id):
-        return Event.query.filter_by(organizer_id=user_id).all()
-
-    
-    @staticmethod
-    def delete_event(event_id):
-        event = Event.query.get(event_id)
-        event.delete()
-
-    
-
-
-class EventController:
-    @staticmethod
-    def add_event(name, description, date_str, time_str, location, organizer_id, image=None):
-        """Add a new event with optional image upload."""
-        event = Event(
-            name=name,
-            description=description,
-            date=datetime.strptime(date_str, '%Y-%m-%d').date(),
-            time=datetime.strptime(time_str[:5], '%H:%M').time(),
-            location=location,
-            organizer_id=organizer_id,
-        )
-
-        if image and image.filename:
-            event.save_image(image)
-
-        db.session.add(event)
-        db.session.commit()
 
 
     @staticmethod

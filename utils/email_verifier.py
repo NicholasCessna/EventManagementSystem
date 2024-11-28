@@ -5,7 +5,9 @@ class EmailVerifier:
     def verify(email):
         # Use an API like ZeroBounce to verify the email
         API_URL = "https://api.zerobounce.net/v2/validate"
-        API_KEY = "712403cd2fdd4885afa1c1694e00cace"
+        API_KEY = "9d3c368da9654fd7b4b6bb1285b7"
+        
+        
 
         params = {
             "api_key": API_KEY,

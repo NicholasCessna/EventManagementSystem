@@ -1,7 +1,7 @@
 # flask_routes.py
 from flask import render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
-from controllers import UserController, EventController, SignUpController
+from controllers.controllers import UserController, EventController, SignUpController
 from utils.email_verifier import EmailVerifier
 from datetime import datetime
 
@@ -166,11 +166,10 @@ def register_routes(app):
             date_str = request.form['date']
             time_str = request.form['time']
             location = request.form['location']
-
+            image = request.files.get('image')
+            
             date = datetime.strptime(date_str, '%Y-%m-%d').date()
             time = datetime.strptime(time_str, '%H:%M').time()
-
-            image = request.files.get('image')
 
             EventController.add_event(name, description, date, time, location, current_user.id, image)
 
@@ -178,8 +177,6 @@ def register_routes(app):
             return redirect(url_for('events'))
 
         return render_template('add_event.html')
-
-
 
 
     @app.route('/event/<int:event_id>/signup', methods=['GET', 'POST'])
@@ -214,11 +211,14 @@ def register_routes(app):
             # Collect form data
             name = request.form['name']
             description = request.form['description']
-            date = request.form['date']
-            time = request.form['time']
+            date_str = request.form['date']
+            time_str = request.form['time']
             location = request.form['location']
             remove_image = request.form.get('remove_image', None) == "yes"
             image = request.files.get('image')
+
+            date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            time = datetime.strptime(time_str, '%H:%M').time()
 
             EventController.edit_event(event_id, name, description, date, time, location, image, remove_image)
             flash('Event updated successfully!')
