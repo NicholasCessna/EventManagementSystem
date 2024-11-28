@@ -56,6 +56,15 @@ class Event(db.Model):
         self.location = location
         db.session.commit()
         
+    @staticmethod
+    def search_events(query):
+        """Search for future events by name or description."""
+        now = datetime.now(pytz.timezone('US/Eastern'))
+        return Event.query.filter(
+            ((Event.date > now.date()) | 
+             ((Event.date == now.date()) & (Event.time >= now.time()))) &
+            (Event.name.contains(query) | Event.description.contains(query))
+        ).order_by(Event.date, Event.time)
         
     @staticmethod
     def save_image(image):

@@ -120,10 +120,8 @@ class EventController:
 
     @staticmethod
     def search_events(query):
-        """Search for events by name or description."""
-        return Event.query.filter(
-            Event.name.contains(query) | Event.description.contains(query)
-        ).all()
+        """Delegate search functionality to the Event model."""
+        return Event.search_events(query)
 
 
     @staticmethod

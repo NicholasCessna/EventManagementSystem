@@ -217,10 +217,7 @@ def register_routes(app):
             remove_image = request.form.get('remove_image', None) == "yes"
             image = request.files.get('image')
 
-            date = datetime.strptime(date_str, '%Y-%m-%d').date()
-            time = datetime.strptime(time_str, '%H:%M').time()
-
-            EventController.edit_event(event_id, name, description, date, time, location, image, remove_image)
+            EventController.edit_event(event_id, name, description, date_str, time_str, location, image, remove_image)
             flash('Event updated successfully!')
             return redirect(url_for('profile'))
 
